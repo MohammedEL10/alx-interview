@@ -23,14 +23,18 @@ def canUnlockAll(boxes):
     print("setOfkeys", setOfkeys)
     index = 0
     while index < len(setOfkeys):
+        setkey = setOfkeys[index]
         print("setOfkeys", setOfkeys)
         print("key number:", setOfkeys[index])
         print("setOfkeys length start", len(setOfkeys))
-        for key in boxes[index]:
+        print("opening box:", boxes[setkey])
+        setkey = setOfkeys[index]
+        for key in boxes[setkey]:
             print("opening box:", boxes[index])
-            if key < total_boxes and key not in setOfkeys:
+            if key < total_boxes and key not in setOfkeys and key > 0:
                 setOfkeys.append(key)
             index += 1
+            print("setOfkeys", setOfkeys)
             print("setOfkeys length end:", len(setOfkeys))
             print("++++++")
     print("____")
