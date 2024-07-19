@@ -1,48 +1,51 @@
-#!/usr/bin/python3
 
+#!/usr/bin/python3
+"""
+log parsing
+"""
 
 import sys
-from collections import defaultdict
+import re
 
-def print_metrics(total_size, status_code_counts):
-    print(f"Total file size: {total_size}")
-    for code in sorted(status_code_counts.keys()):
-        print(f"{code}: {status_code_counts[code]}")
 
-def main():
-    total_size = 0
-    status_code_counts = defaultdict(int)
+def output(log: dict) -> None:
+    """
+    helper function to display stats
+    """
+    print("File size: {}".format(log["file_size"]))
+    for code in sorted(log["code_frequency"]):
+        if log["code_frequency"][code]:
+            print("{}: {}".format(code, log["code_frequency"][code]))
+
+
+if __name__ == "__main__":
+    regex = re.compile(
+    r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - \[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}.\d+\] "GET /projects/260 HTTP/1.1" (.{3}) (\d+)')  # nopep8
+
     line_count = 0
+    log = {}
+    log["file_size"] = 0
+    log["code_frequency"] = {
+        str(code): 0 for code in [
+            200, 301, 400, 401, 403, 404, 405, 500]}
 
     try:
         for line in sys.stdin:
             line = line.strip()
-            # Example line: 192.168.0.1 - [18/Sep/2023:15:34:34 +0000] "GET /projects/260 HTTP/1.1" 200 1234
-            parts = line.split()
-            if len(parts) >= 7:
-                status_code = parts[-2]
-                file_size = parts[-1]
-                try:
-                    file_size = int(file_size)
-                except ValueError:
-                    continue  # Skip if file size is not an integer
+            match = regex.fullmatch(line)
+            if (match):
+                line_count += 1
+                code = match.group(1)
+                file_size = int(match.group(2))
 
-                if status_code.isdigit():
-                    status_code = int(status_code)
-                    if status_code in [200, 301, 400, 401, 403, 404, 405, 500]:
-                        total_size += file_size
-                        status_code_counts[status_code] += 1
-                        line_count += 1
+                # File size
+                log["file_size"] += file_size
 
-                        if line_count % 10 == 0:
-                            print_metrics(total_size, status_code_counts)
-                            print()  # Just for readability
+                # status code
+                if (code.isdecimal()):
+                    log["code_frequency"][code] += 1
 
-    except KeyboardInterrupt:
-        pass  # Handle KeyboardInterrupt (CTRL + C)
-
-    # Print final metrics before exiting
-    print_metrics(total_size, status_code_counts)
-
-if __name__ == "__main__":
-    main()
+                if (line_count % 10 == 0):
+                    output(log)
+    finally:
+        output(log)
